@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.serde.Constants;
 import org.apache.hadoop.hive.serde2.SerDe;
@@ -59,6 +62,7 @@ public class JsonSerDe implements SerDe {
 
     public static final Log LOG = LogFactory.getLog(JsonSerDe.class);
     public static final String PROP_COLUMN_MAPPINGS = "json.mappings";
+    public static final String PROP_REPLACE_STRINGS = "json.replaces";
 
     List<String> columnNames;
     List<TypeInfo> columnTypes;
@@ -66,6 +70,7 @@ public class JsonSerDe implements SerDe {
     StructObjectInspector rowObjectInspector;
     boolean[] columnSortOrderIsDesc;
     HashMap<String,String> columnMappings;
+    List<String> replaceStrings;
 
 
    
@@ -123,6 +128,13 @@ public class JsonSerDe implements SerDe {
             columnMappings.put(mapping[0], mapping[1]);
         }
 
+        String specialReplaces = tbl.getProperty(PROP_REPLACE_STRINGS, "");
+        replaceStrings = new ArrayList<String>();
+        String[] regexps = specialReplaces.split("\\s*,\\s*");
+        for(String regexp: regexps){
+        	replaceStrings.add(regexp);
+        }
+
     }
 
     // private Class getClassFromTypeInfo(TypeInfo t){
@@ -165,7 +177,17 @@ public class JsonSerDe implements SerDe {
         // Try parsing row into JSON object
         JSONObject jObj = null;
         try {
-            jObj = new JSONObject(rowText.toString()) {
+        	String rawString = rowText.toString();
+			for (String regexp : replaceStrings) {
+				Pattern pattern = Pattern.compile(":\\s*" + regexp + "\\s*,");
+				Matcher matcher = pattern.matcher(rawString);
+				while (matcher.find()) {
+					rawString = matcher.replaceFirst(":" + matcher.group(1) + ",");
+					matcher = pattern.matcher(rawString);
+				}
+			}
+
+            jObj = new JSONObject(rawString) {
 
                 private String getKey(String original){
                     String nk = original.toLowerCase();

@@ -12,29 +12,32 @@
 
 package org.openx.data.jsonserde;
 
-import java.util.Map;
-import java.util.HashMap;
-import org.apache.hadoop.hive.serde2.SerDeException;
-import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
-import java.util.List;
-import java.util.LinkedList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
-import org.openx.data.jsonserde.json.JSONArray;
-import org.apache.hadoop.io.Text;
-import org.openx.data.jsonserde.json.JSONException;
-import org.openx.data.jsonserde.json.JSONObject;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.serde.Constants;
+import org.apache.hadoop.hive.serde2.SerDeException;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
+import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import org.openx.data.jsonserde.json.JSONArray;
+import org.openx.data.jsonserde.json.JSONException;
+import org.openx.data.jsonserde.json.JSONObject;
 
 /**
  *
@@ -156,7 +159,26 @@ public class JsonSerDeTest {
         assertTrue( ((JSONArray)result.get("three")).get(0) instanceof String );
         assertEquals( ((JSONArray)result.get("three")).get(0),"red");
     }
-
+    
+    @Test
+    public void testDeserialize3() throws Exception {
+        instance = new JsonSerDe();
+        Configuration conf = null;
+        String cols = "_id,assoc_id,four";
+        String colTypes = "string,string,string";
+        Properties tbl = new Properties();
+        tbl.setProperty(Constants.LIST_COLUMNS, cols);
+        tbl.setProperty(Constants.LIST_COLUMN_TYPES, colTypes);
+        tbl.setProperty(JsonSerDe.PROP_REPLACE_STRINGS, "ObjectId\\(\\s*([\"a-zA-Z0-9]*)\\s*\\)");
+        instance.initialize(conf, tbl);
+        Writable w = new Text("{\"_id\" : ObjectId( \"1a2b3c4d5e\" ), \"assoc_id\" : ObjectId( \"6f7g8h9i0j\" ), \"four\" : \"poop\" }");
+        Object expResult = null;
+        JSONObject result = (JSONObject) instance.deserialize(w);
+        assertEquals(result.get("_id"),"1a2b3c4d5e");
+        assertEquals(result.get("assoc_id"),"6f7g8h9i0j");
+        assertEquals(result.get("four"),"poop");
+    }
+    
     /**
      * Test of getSerializedClass method, of class JsonSerDe.
      */
