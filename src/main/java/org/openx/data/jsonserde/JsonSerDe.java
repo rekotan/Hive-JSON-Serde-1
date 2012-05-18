@@ -128,12 +128,14 @@ public class JsonSerDe implements SerDe {
             columnMappings.put(mapping[0], mapping[1]);
         }
 
-        String specialReplaces = tbl.getProperty(PROP_REPLACE_STRINGS, "");
-        replaceStrings = new ArrayList<String>();
-        String[] regexps = specialReplaces.split("\\s*,\\s*");
-        for(String regexp: regexps){
-        	replaceStrings.add(regexp);
-        }
+		String specialReplaces = tbl.getProperty(PROP_REPLACE_STRINGS, "");
+		replaceStrings = new ArrayList<String>();
+		String[] regexps = specialReplaces.split("\\s*,\\s*");
+		for (String regexp : regexps) {
+			if (!regexp.equals("")) {
+				replaceStrings.add(regexp);
+			}
+		}
 
     }
 
@@ -179,10 +181,10 @@ public class JsonSerDe implements SerDe {
         try {
         	String rawString = rowText.toString();
 			for (String regexp : replaceStrings) {
-				Pattern pattern = Pattern.compile(":\\s*" + regexp + "\\s*,");
+				Pattern pattern = Pattern.compile(regexp);
 				Matcher matcher = pattern.matcher(rawString);
 				while (matcher.find()) {
-					rawString = matcher.replaceFirst(":" + matcher.group(1) + ",");
+					rawString = matcher.replaceFirst(matcher.group(1));
 					matcher = pattern.matcher(rawString);
 				}
 			}

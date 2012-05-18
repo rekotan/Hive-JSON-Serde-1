@@ -164,19 +164,20 @@ public class JsonSerDeTest {
     public void testDeserialize3() throws Exception {
         instance = new JsonSerDe();
         Configuration conf = null;
-        String cols = "_id,assoc_id,four";
-        String colTypes = "string,string,string";
+        String cols = "_id,assoc_id,four,year";
+        String colTypes = "string,string,string,string";
         Properties tbl = new Properties();
         tbl.setProperty(Constants.LIST_COLUMNS, cols);
         tbl.setProperty(Constants.LIST_COLUMN_TYPES, colTypes);
-        tbl.setProperty(JsonSerDe.PROP_REPLACE_STRINGS, "ObjectId\\(\\s*([\"a-zA-Z0-9]*)\\s*\\)");
+        tbl.setProperty(JsonSerDe.PROP_REPLACE_STRINGS, "ObjectId\\(\\s*([\"a-zA-Z0-9]*)\\s*\\),Date\\(\\s*([0-9]*)\\s*\\)");
         instance.initialize(conf, tbl);
-        Writable w = new Text("{\"_id\" : ObjectId( \"1a2b3c4d5e\" ), \"assoc_id\" : ObjectId( \"6f7g8h9i0j\" ), \"four\" : \"poop\" }");
+        Writable w = new Text("{\"_id\" : ObjectId( \"1a2b3c4d5e\" ), \"assoc_id\" : ObjectId( \"6f7g8h9i0j\" ), \"four\" : \"poop\", \"year\" : Date(18446743969597551616) }");
         Object expResult = null;
         JSONObject result = (JSONObject) instance.deserialize(w);
         assertEquals(result.get("_id"),"1a2b3c4d5e");
         assertEquals(result.get("assoc_id"),"6f7g8h9i0j");
         assertEquals(result.get("four"),"poop");
+        assertEquals(result.get("year"),"18446743969597551616");
     }
     
     /**
