@@ -162,7 +162,26 @@ public class JsonSerDe implements SerDe {
         return null;
     }
 
-
+    // ignore precision drop
+	private Object convertFollowingTypeName(String typeName, Object value) {
+		if(typeName == null) {
+			return value;
+		} else if (typeName.equalsIgnoreCase(Long.class.toString())
+				&& value.getClass().toString().equalsIgnoreCase(Integer.class.toString())) {
+			return ((Integer) value).longValue();
+		} else if (typeName.equalsIgnoreCase(Integer.class.toString())
+				&& value.getClass().toString().equalsIgnoreCase(Long.class.toString())) {
+			return ((Long) value).intValue();
+		} else if (typeName.equalsIgnoreCase(Double.class.toString())
+				&& value.getClass().toString().equalsIgnoreCase(Float.class.toString())) {
+			return ((Float) value).doubleValue();
+		} else if (typeName.equalsIgnoreCase(Float.class.toString())
+				&& value.getClass().toString().equalsIgnoreCase(Double.class.toString())) {
+			return ((Double) value).floatValue();
+		} else {
+			return value;
+		}
+	}
 
     /**
      * Deserializes the object. Reads a Writable and uses JSONObject to
@@ -212,6 +231,7 @@ public class JsonSerDe implements SerDe {
                     int fieldIndex = columnNames.indexOf(newK);
                     if(fieldIndex > -1){
                         String typeName = getClassName(columnTypes.get(fieldIndex).toString());
+                        value = convertFollowingTypeName(typeName, value);
                         String valueTypeName = value.getClass().toString();
 
                         if(typeName != null && !typeName.equalsIgnoreCase(valueTypeName)){
@@ -220,6 +240,29 @@ public class JsonSerDe implements SerDe {
                         }
                     }
                     return super.put(newK, value);
+                }
+                
+                /**
+                 * Rearrange column type
+                 * 
+                 * @see org.json.JSONObject#putOnce(java.lang.String,
+                 *      java.lang.Object)
+                 */
+                @Override
+                public JSONObject putOnce(String key, Object value) throws JSONException {
+                    if (key != null && value != null) {
+                        if (opt(key) != null) {
+                            throw new JSONException("Duplicate key \"" + key + "\"");
+                        }
+						String newK = getKey(key);
+						int fieldIndex = columnNames.indexOf(newK);
+						if (fieldIndex > -1) {
+							String typeName = getClassName(columnTypes.get(fieldIndex).toString());
+							value = convertFollowingTypeName(typeName, value);
+							put(key, value);
+						}
+                    }
+                    return this;
                 }
             };
         } catch (Exception e) {

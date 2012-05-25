@@ -1262,12 +1262,7 @@ public class JSONObject {
                         string.indexOf('e') > -1 || string.indexOf('E') > -1) {
                     return Double.valueOf(string);
                 } else {
-                    Long myLong = new Long(string);
-                    if (myLong.longValue() == myLong.intValue()) {
-                        return new Integer(myLong.intValue());
-                    } else {
-                        return myLong;
-                    }
+                    return new Long(string);
                 }
             }  catch (Exception ignore) {
             }
