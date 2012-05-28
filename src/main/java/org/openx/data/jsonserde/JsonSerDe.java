@@ -162,25 +162,46 @@ public class JsonSerDe implements SerDe {
         return null;
     }
 
-    // ignore precision drop
-	private Object convertFollowingTypeName(String typeName, Object value) {
-		if(typeName == null) {
+    // try to behave as same as default Hive:
+    // - if JSON value is determined as long but defined type is integer:
+    //     -> do nothing (then this value will be ignored)
+    // - if JSON value is determined as float or double but defined type is integer or long:
+    //     -> do nothing (then this value will be ignored)
+    // - if JSON value is determined as double but defined type is float:
+    //     -> return truncated float
+	private Object convertByDefinedClassName(String definedClassName, Object value) {
+		String[] classNames = new String[] { value.getClass().toString(), definedClassName };
+		if (definedClassName == null) {
 			return value;
-		} else if (typeName.equalsIgnoreCase(Long.class.toString())
-				&& value.getClass().toString().equalsIgnoreCase(Integer.class.toString())) {
+		} else if (isSameClasses(classNames, Integer.class, Long.class)) {
 			return ((Integer) value).longValue();
-		} else if (typeName.equalsIgnoreCase(Integer.class.toString())
-				&& value.getClass().toString().equalsIgnoreCase(Long.class.toString())) {
-			return ((Long) value).intValue();
-		} else if (typeName.equalsIgnoreCase(Double.class.toString())
-				&& value.getClass().toString().equalsIgnoreCase(Float.class.toString())) {
-			return ((Float) value).doubleValue();
-		} else if (typeName.equalsIgnoreCase(Float.class.toString())
-				&& value.getClass().toString().equalsIgnoreCase(Double.class.toString())) {
+		} else if (isSameClasses(classNames, Integer.class, Float.class)) {
+			return ((Integer) value).floatValue();
+		} else if (isSameClasses(classNames, Long.class, Float.class)) {
+			return ((Long) value).floatValue();
+		} else if (isSameClasses(classNames, Double.class, Float.class)) {
 			return ((Double) value).floatValue();
+		} else if (isSameClasses(classNames, Integer.class, Double.class)) {
+			return ((Integer) value).doubleValue();
+		} else if (isSameClasses(classNames, Long.class, Double.class)) {
+			return ((Long) value).doubleValue();
+		} else if (isSameClasses(classNames, Float.class, Double.class)) {
+			return ((Float) value).doubleValue();
 		} else {
 			return value;
 		}
+	}
+
+	private boolean isSameClasses(String[] classNames, Class<?>... clazzes) {
+		if (classNames.length != clazzes.length) {
+			throw new IllegalArgumentException("array size must be equal.");
+		}
+		for (int i = 0; i < classNames.length; i++) {
+			if (!clazzes[i].toString().equalsIgnoreCase(classNames[i])) {
+				return false;
+			}
+		}
+		return true;
 	}
 
     /**
@@ -231,7 +252,7 @@ public class JsonSerDe implements SerDe {
                     int fieldIndex = columnNames.indexOf(newK);
                     if(fieldIndex > -1){
                         String typeName = getClassName(columnTypes.get(fieldIndex).toString());
-                        value = convertFollowingTypeName(typeName, value);
+                        value = convertByDefinedClassName(typeName, value);
                         String valueTypeName = value.getClass().toString();
 
                         if(typeName != null && !typeName.equalsIgnoreCase(valueTypeName)){
@@ -258,7 +279,7 @@ public class JsonSerDe implements SerDe {
 						int fieldIndex = columnNames.indexOf(newK);
 						if (fieldIndex > -1) {
 							String typeName = getClassName(columnTypes.get(fieldIndex).toString());
-							value = convertFollowingTypeName(typeName, value);
+							value = convertByDefinedClassName(typeName, value);
 							put(key, value);
 						}
                     }

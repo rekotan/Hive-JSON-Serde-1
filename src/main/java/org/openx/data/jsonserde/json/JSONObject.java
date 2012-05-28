@@ -1258,12 +1258,17 @@ public class JSONObject {
                 }
             }
             try {
-                if (string.indexOf('.') > -1 || 
-                        string.indexOf('e') > -1 || string.indexOf('E') > -1) {
-                    return Double.valueOf(string);
-                } else {
-                    return new Long(string);
-                }
+				if (string.indexOf('.') > -1 || string.indexOf('e') > -1
+						|| string.indexOf('E') > -1) {
+					return Double.valueOf(string);
+				} else {
+					Long myLong = new Long(string);
+					if (myLong.longValue() == myLong.intValue()) {
+						return new Integer(myLong.intValue());
+					} else {
+						return myLong;
+					}
+				}
             }  catch (Exception ignore) {
             }
         }

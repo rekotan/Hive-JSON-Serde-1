@@ -106,7 +106,7 @@ public class JsonSerDeTest {
         Writable w = new Text("{\"one\":23, \"two\": true}");
         JSONObject result = (JSONObject) instance.deserialize(w);
         assertEquals(result.get("two"), true);
-        assertEquals(result.get("one"), 23L);
+        assertEquals(result.get("one"), 23);
     }
 
     @Test
@@ -184,13 +184,13 @@ public class JsonSerDeTest {
         instance = new JsonSerDe();
         Configuration conf = null;
         String cols = "num_bigint,num_int,num_float,num_double,params";
-        String colTypes = "bigint,int,float,double,struct<num_bigint:bigint,num_double:double>";
+        String colTypes = "bigint,int,float,double,struct<num_int:int,num_bigint:bigint,num_double:double>";
         Properties tbl = new Properties();
         tbl.setProperty(Constants.LIST_COLUMNS, cols);
         tbl.setProperty(Constants.LIST_COLUMN_TYPES, colTypes);
         instance.initialize(conf, tbl);
         Writable w = new Text("{\"num_bigint\":1,\"num_int\":2,\"num_float\":3.1,\"num_double\":4.1," +
-        		"\"params\":{\"num_bigint\":5,\"num_double\":8.1}}");
+        		"\"params\":{\"num_bigint\":5000000000,\"num_int\":6,\"num_double\":8.1}}");
         JSONObject result = (JSONObject) instance.deserialize(w);
         System.out.println(result);
         assertEquals(result.get("num_bigint"),1L);
@@ -201,8 +201,10 @@ public class JsonSerDeTest {
         assertEquals(result.get("num_float").getClass(),Float.class);
         assertEquals(result.get("num_double"),4.1d);
         assertEquals(result.get("num_double").getClass(),Double.class);
-        assertEquals(((JSONObject)result.get("params")).get("num_bigint"),5L);
+        assertEquals(((JSONObject)result.get("params")).get("num_bigint"),5000000000L);
         assertEquals(((JSONObject)result.get("params")).get("num_bigint").getClass(),Long.class);
+        assertEquals(((JSONObject)result.get("params")).get("num_int"),6);
+        assertEquals(((JSONObject)result.get("params")).get("num_int").getClass(),Integer.class);
         assertEquals(((JSONObject)result.get("params")).get("num_double"),8.1d);
         assertEquals(((JSONObject)result.get("params")).get("num_double").getClass(),Double.class);
     }
